@@ -31,7 +31,39 @@ const searchTeacher = async (req, res) => {
   }
 };
 
+const updateMode = async (req, res) => {
+  const { id } = req.params;
+  const { mode } = req.body;
+
+  try {
+    if (!Number(id)) {
+      return res.status(400).json({ error: "Invalid appointment ID." });
+    }
+
+    if (!['online', 'onsite'].includes(mode)) {
+      return res.status(400).json({ error: "Invalid mode. Must be 'online' or 'onsite'." });
+    }
+
+    const modeId = mode === 'online' ? 1 : 2;
+
+    const result = await pool.query(
+      "UPDATE appointments SET mode_id = $1 WHERE id = $2 RETURNING *",
+      [modeId, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    res.status(200).json({ message: "Appointment mode updated successfully", appointment: result.rows[0] });
+  } catch (err) {
+    console.error("Error updating appointment mode:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
+  updateMode,
   getTeachers,
   searchTeacher,
 };
